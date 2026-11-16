@@ -1,0 +1,136 @@
+{
+  "slides": [
+    {
+      "id": "gta",
+      "headline": "Grand Theft Auto VI",
+      "artwork": "/assets/gta-vice-city-poster-no-date.jpg",
+      "eyebrow": {
+        "en": "",
+        "lt": ""
+      },
+      "supporting": {
+        "en": "",
+        "lt": ""
+      },
+      "cta": {
+        "en": "Buy Now",
+        "lt": "Pirkti dabar"
+      },
+      "destination": "#/product/gta"
+    },
+    {
+      "id": "cyberpunk",
+      "headline": "Cyberpunk 2077",
+      "artwork": "/assets/cyberpunk-banner.jpg",
+      "eyebrow": {
+        "en": "Top games",
+        "lt": "Populiariausi žaidimai"
+      },
+      "supporting": {
+        "en": "Explore Night City",
+        "lt": "Atraskite Naktinį miestą"
+      },
+      "cta": {
+        "en": "Buy Now",
+        "lt": "Pirkti dabar"
+      },
+      "destination": "#/product/cyberpunk"
+    },
+    {
+      "id": "resident",
+      "headline": "Resident Evil 4",
+      "artwork": "/assets/re4-banner.jpg",
+      "eyebrow": {
+        "en": "Top games",
+        "lt": "Populiariausi žaidimai"
+      },
+      "supporting": {
+        "en": "Return to survival horror",
+        "lt": "Grįžkite į siaubo pasaulį"
+      },
+      "cta": {
+        "en": "Buy Now",
+        "lt": "Pirkti dabar"
+      },
+      "destination": "#/product/resident"
+    },
+    {
+      "id": "hogwarts",
+      "headline": "Hogwarts Legacy",
+      "artwork": "/assets/hogwarts-banner.jpg",
+      "eyebrow": {
+        "en": "Top games",
+        "lt": "Populiariausi žaidimai"
+      },
+      "supporting": {
+        "en": "Discover the wizarding world",
+        "lt": "Atraskite burtininkų pasaulį"
+      },
+      "cta": {
+        "en": "Buy Now",
+        "lt": "Pirkti dabar"
+      },
+      "destination": "#/product/hogwarts"
+    },
+    {
+      "id": "steam",
+      "headline": "Steam Gift Card",
+      "artwork": "/assets/steam-gift-card-banner.webp",
+      "eyebrow": {
+        "en": "Gift cards",
+        "lt": "Dovanų kortelės"
+      },
+      "supporting": {
+        "en": "Top up your wallet",
+        "lt": "Papildykite piniginę"
+      },
+      "cta": {
+        "en": "Shop Cards",
+        "lt": "Pirkti korteles"
+      },
+      "destination": "#/product/steam"
+    }
+  ],
+  "shelves": [
+    {
+      "id": "featured-deals",
+      "title": {
+        "en": "Featured deals",
+        "lt": "Atrinkti pasiūlymai"
+      },
+      "order": 0
+    },
+    {
+      "id": "top-games",
+      "title": {
+        "en": "Top games",
+        "lt": "Populiariausi žaidimai"
+      },
+      "order": 1
+    },
+    {
+      "id": "egift-cards",
+      "title": {
+        "en": "Best selling eGift Cards",
+        "lt": "Populiariausios el. dovanų kortelės"
+      },
+      "order": 2
+    },
+    {
+      "id": "gift-cards",
+      "title": {
+        "en": "Best selling gift cards",
+        "lt": "Populiariausios dovanų kortelės"
+      },
+      "order": 3
+    },
+    {
+      "id": "upcoming",
+      "title": {
+        "en": "Upcoming games",
+        "lt": "Būsimi žaidimai"
+      },
+      "order": 4
+    }
+  ]
+}

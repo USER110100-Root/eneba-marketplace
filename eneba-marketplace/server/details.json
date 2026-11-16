@@ -1,0 +1,13 @@
+{
+ "batman-arkham-collection":{
+ "rating":4.66,"count":696,"scores":{"Gameplay":4.8,"Story":4.7,"Graphics":4.5,"Soundtrack":4.6},
+ "genres":["Action","Adventure","Single Player","Third Person"],
+ "description":"Become Batman across Rocksteady’s Arkham trilogy. Investigate Gotham’s criminal underworld, use gadgets to survey your surroundings, and switch between stealth and free-flow combat.",
+ "included":["Batman: Arkham Asylum GOTY","Batman: Arkham City GOTY","Batman: Arkham Knight","Arkham Knight Season Pass"],
+ "features":["Free-flow combat and predator encounters","Detective Mode and gadget-based exploration","Drive the Batmobile in Arkham Knight"],
+ "facts":{"Languages":"English, French, German, Italian and Spanish","Release date":"June 23, 2015","Publisher":"Warner Bros. Interactive Entertainment","Developer":"Rocksteady Studios","Supported operating systems":"Windows","Activation instructions":"Open the Steam desktop app, choose Games → Activate a Product on Steam, and enter your key. Demo keys cannot be redeemed.","Edition":"Collection"},
+ "requirements":[["Operating system","Windows 7 SP1, 64-bit","Windows 10, 64-bit"],["Processor","Intel Core i5-750 or AMD Phenom II X4 965","Intel Core i7-3770 or AMD FX-8350"],["RAM","6 GB","8 GB"],["Graphics card","GeForce GTX 660 or Radeon HD 7870","GeForce GTX 760 or Radeon HD 7950"],["Storage","45 GB available","55 GB available"],["Additional notes","DirectX 11","DirectX 11"]],
+ "related":["batman-origins","batman-latam","batman-europe","batman-us","batman-argentina"],
+ "reviews":[{"id":1,"flag":"🇱🇹","user":"GothamPilot","date":"2026-09-15","rating":5,"text":"The trilogy shows how the combat and level design evolved. Arkham City was the highlight for me.","helpful":12},{"id":2,"flag":"🇫🇷","user":"NightGlider","date":"2026-10-02","rating":4,"text":"The detective missions kept me exploring between story chapters. Some vehicle segments felt repetitive, but the atmosphere held up throughout.","helpful":8,"translated":true},{"id":3,"flag":"🇩🇪","user":"CapeAndCowl","date":"2026-10-25","rating":5,"text":"The stealth encounters reward patience and creative gadget use.","helpful":4},{"id":4,"flag":"🇪🇸","user":"ArkhamArchivist","date":"2026-11-03","rating":4,"text":"A good way to revisit the three campaigns. The maps were fun to explore after the story.","helpful":2}]
+ }
+}
