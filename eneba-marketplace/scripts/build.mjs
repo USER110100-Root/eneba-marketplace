@@ -1,5 +1,6 @@
-import {cpSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs'
+import {rmSync,cpSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs'
 import {build} from 'esbuild'
+rmSync('dist',{recursive:true,force:true})
 mkdirSync('dist',{recursive:true})
 cpSync('public','dist',{recursive:true})
 await build({entryPoints:['src/main.tsx'],bundle:true,minify:true,jsx:'automatic',external:['/assets/*'],outdir:'dist',entryNames:'app'})

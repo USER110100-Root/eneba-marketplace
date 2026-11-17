@@ -5,6 +5,7 @@ php_bin=${PHP_BIN:-php}
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 export MARKET_DB="$tmp/market.sqlite"
+"$php_bin" server/setup.php >/dev/null
 request() {
   "$php_bin" -d session.save_path="$tmp" -r '
     $_SERVER["REQUEST_URI"]="/api/orders";
@@ -31,7 +32,7 @@ printf '%s\n' "$guest" | grep -qx '401'
 '
 for id in 1 2; do
   result=$(request "fixture-$id")
-  expected=$(printf '[{"key":"DEMO-ONLY-%s"}]\n200' "$id")
+  expected=$(printf '{"orders":[{"key":"DEMO-ONLY-%s"}],"page":1,"hasMore":false}\n200' "$id")
   [ "$result" = "$expected" ]
 done
 printf '%s\n' 'PASS: guest denied and each fixture account sees only its own order and demo key'

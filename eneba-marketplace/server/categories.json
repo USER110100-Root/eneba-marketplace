@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Games",
+    "destination": "#/store?category=Games"
+  },
+  {
+    "name": "Gaming eCards",
+    "destination": "#/store?category=Gaming+eCards"
+  },
+  {
+    "name": "eGift Cards",
+    "destination": "#/store?category=eGift+Cards"
+  },
+  {
+    "name": "Steam",
+    "destination": "#/store?platform=Steam"
+  },
+  {
+    "name": "Steam Gift Cards",
+    "destination": "#/search?q=steam+gift"
+  },
+  {
+    "name": "PSN",
+    "destination": "#/store?platform=PSN"
+  },
+  {
+    "name": "Xbox",
+    "destination": "#/store?platform=Xbox"
+  },
+  {
+    "name": "FIFA",
+    "destination": "#/search?q=EA+Sports+FC"
+  },
+  {
+    "name": "Fortnite",
+    "destination": "#/search?q=Fortnite"
+  },
+  {
+    "name": "Amazon",
+    "destination": "#/store?platform=Amazon"
+  }
+]

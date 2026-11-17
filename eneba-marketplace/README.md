@@ -1,4 +1,36 @@
-# Eneba Marketplace Demo
+# Eneba marketplace internship submission
+
+Live demo: https://eneba-marketplace-w1b4.onrender.com/
+Repository: https://github.com/USER110100-Root/eneba-marketplace
+
+## Reviewer walkthrough
+
+Register with a demo address, sign in, search for Cybepunk, open Cyberpunk 2077,
+compare the three seller offers, add one to the cart and review checkout.
+Stripe sandbox setup is required for the new payment flow. Use the test cards
+below. After webhook confirmation, the fictional key appears in Library.
+The free Render instance may take time to wake up and its SQLite data is ephemeral.
+
+## Scope and decisions
+
+The primary scope is discovery, seller comparison, authenticated checkout and
+key delivery. React/TypeScript handles rendering, PHP owns authorization,
+validation and payment fulfillment, and SQLite keeps the demo easy to run.
+Seller offers are generated from database product prices. There is no finite
+stock reservation or real key inventory. Stripe is sandbox-only.
+Homepage slides and shelf definitions come from server/home.json, product shelf
+items from SQLite, and category blocks from server/categories.json, aggregated
+by server/catalog.php. The frontend keeps only presentation and icon mappings.
+Real commerce, production tax calculation and real fulfillment are outside this
+internship demo. The chatbot has been removed to focus on the marketplace flow.
+
+## AI usage and required transcript
+
+AI assisted implementation, debugging and deployment. The applicant must supply
+the full original coding conversations with the submission. This repository
+does not contain a fabricated transcript or claim that this summary replaces it.
+
+## Original setup notes
 
 React and TypeScript storefront with a PHP 8.3+ API and SQLite. All orders and activation keys are simulated.
 
@@ -23,7 +55,6 @@ The GTA VI artwork, logo, and first six covers were extracted from the supplied 
 
 Production defaults to secure session cookies. Set `SESSION_COOKIE_SECURE=true` on HTTPS deployments, including behind a TLS proxy. The local `APP_ENV=development` command allows cookies over local HTTP.
 
-AI chat is local-only. It defaults to enabled with `APP_ENV=development` and uses local Ollama. Set `CHAT_ENABLED=false` for public deployments. The chat lock is shared by PHP workers using the same database directory. The 15-second deadline applies to the PHP request to Ollama.
 
 ## Public deployment
 
@@ -32,28 +63,63 @@ AI chat is local-only. It defaults to enabled with `APP_ENV=development` and use
 - Set `MARKET_DB` to an absolute writable path outside `dist/` for both setup and PHP. For a host with a private volume mounted at `/var/data`, use `/var/data/market.sqlite`. If storage is ephemeral, the demo database may reset on redeploy.
 - Run `php server/setup.php` before starting the app.
 - Configure the host to return 403 or 404 for `/server`, `/server/*`, and requests for SQLite files before applying any storefront fallback.
-- After deploying, request `https://your-site/market.sqlite` and `https://your-site/server/`. Both should return HTTP 403 or 404. Confirm that `/api/home` still returns JSON and that a POST to `/api/chat` returns HTTP 503 with the chat-unavailable message.
-
-## Browser tests
-
-The Playwright suite uses Chromium and starts its own PHP server with a temporary SQLite database. AI chat is disabled and checkout uses demo keys. Install PHP with PDO SQLite, then run:
-
-```sh
-npm install
-npx playwright install --with-deps chromium
-CI=1 npm run test:e2e
-```
-
-Set `PHP_BIN` to a PHP executable when it is outside your PATH. The suite uses port 4188.
+- After deploying, request `https://your-site/market.sqlite` and `https://your-site/server/`. Both should return HTTP 403 or 404. Confirm that `/api/home` still returns JSON.
 
 ### Deploy on Render
 
 Create a Docker Web Service from the repository and use the directory containing
 `Dockerfile` as its root. The container builds the frontend, initializes the
 catalog in SQLite, and serves both the frontend and `/api/*` from one origin.
-Use `/api/home` as the health check. Chat is local-only and disabled in production.
+Use `/api/home` as the health check.
 
 The default database path is `/var/data/market.sqlite`, outside the public
 `dist/` directory. Without a persistent disk, accounts and demo orders can be
 lost when the container is replaced. If you attach a disk, set `MARKET_DB`
 to a file on its mount and ensure the directory is writable by `www-data`.
+
+### Stripe sandbox checkout
+
+Set STRIPE_SECRET_KEY to your sandbox sk_test_ key, STRIPE_WEBHOOK_SECRET to
+the endpoint's whsec_ secret, and APP_URL to the canonical public origin
+(for this deployment, https://eneba-marketplace-w1b4.onrender.com).
+See .env.example. Export variables in your shell or configure them on Render.
+The app does not load .env files automatically. Never expose secrets to React.
+
+Run php server/setup.php to create checkout_attempts before restarting.
+Configure a Stripe sandbox webhook at /api/stripe/webhook for
+checkout.session.completed, checkout.session.async_payment_succeeded,
+checkout.session.expired and checkout.session.async_payment_failed.
+Locally, use stripe listen --forward-to localhost:4178/api/stripe/webhook and
+use the signing secret printed by that CLI. Production HTTPS cookies require
+SESSION_COOKIE_SECURE=true. Use false only for local HTTP development.
+
+Sign in, add an available offer, review seller/platform/region/total, and
+confirm immediate delivery for game/software items. Continue to the Stripe
+sandbox page using Pay with Stripe. Use 4242 4242 4242 4242, any future expiry
+and any three-digit CVC. Use 4000 0000 0000 0002 to test a decline.
+Use Back on Stripe to cancel: the cart remains available. Declines remain on
+Stripe so the buyer can retry. The success page polls the authenticated order
+status and cannot issue keys. Until a signed paid event arrives, it waits.
+Duplicate paid events and repeated clicks reuse the order identity.
+Only paid orders enter order history; every issued key is fictional.
+
+No additional taxes/fees are added to the demo price, and there is no invented
+VAT breakdown. Gift cards/vouchers do not require digital-content withdrawal
+consent. Availability checks use the database catalog and current generated
+seller offers; the demo has no finite inventory reservation system.
+The embedded demo notices need merchant-specific review before real commerce.
+
+Run php tests/stripe.php for signature, payment mismatch and duplicate-event
+regressions. A complete hosted payment test requires your Stripe sandbox
+credentials and webhook forwarding. No live Stripe payment was performed
+during implementation.
+
+## Repeatable verification
+
+Run npm ci, npm run check, npm run build, then php tests/stripe.php and
+php tests/security.php. Run PHP_BIN=php sh tests/order-access.sh for isolation.
+Start a seeded local PHP server on port 4178 and run npm run test:e2e.
+Set E2E_BASE_URL for another test deployment. The committed browser smoke tests
+cover typo search, seller selection, filters, guest checkout, unverified
+payment returns and chatbot removal. They do not pretend to test a Stripe
+payment without sandbox credentials.

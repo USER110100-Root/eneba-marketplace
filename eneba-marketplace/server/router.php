@@ -14,6 +14,14 @@ function respond(mixed $data, int $status = 200): never {
     exit;
 }
 require __DIR__.'/database.php';
+require __DIR__.'/payments.php';
+if ($path === '/api/stripe/webhook') {
+    try {
+        $event=verifiedStripeEvent(file_get_contents('php://input'), $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '', getenv('STRIPE_WEBHOOK_SECRET') ?: '');
+    } catch (Throwable) { respond(['error'=>'Invalid webhook'],400); }
+    try { fulfillStripe(openMarketDatabase(),$event); respond(['received'=>true]); }
+    catch (Throwable) { respond(['error'=>'Webhook processing failed'],500); }
+}
 $method = $_SERVER['REQUEST_METHOD'];
 $publicRead = $method === 'GET' && (in_array($path, ['/api/home', '/api/catalog', '/api/products'], true)
     || str_starts_with($path, '/api/products/'));
@@ -55,10 +63,7 @@ if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input', false, null, 0, 65536),true);
     if (!is_array($input)) respond(['error'=>'Invalid request'],400);
 }
-if ($path === '/api/chat' && $method === 'POST') {
-    require __DIR__.'/chat.php';
-    marketplaceChat($input, $products, $db);
-}
+
 function enforceWriteLimit(PDO $db, string $route, string $identity): void {
     $retry = consumeAuthAttempts($db, $route, $_SERVER['REMOTE_ADDR'] ?? 'unknown', $identity, time());
     if ($retry > 0) {
@@ -145,6 +150,7 @@ if (in_array($path,['/api/login','/api/register','/api/newsletter'],true) && $me
     $_SESSION['email'] = $email;
     respond(['email'=>$email]);
 }
+checkoutRoutes($db,$path,$method,$input,$byId);
 if ($path === '/api/orders') {
     if (!isset($_SESSION['user'])) respond(['error'=>'Sign in to access your orders'],401);
     if ($method === 'GET') {
@@ -165,28 +171,8 @@ if ($path === '/api/orders') {
         ]);
     }
     if ($method === 'POST') {
-        enforceWriteLimit($db, 'orders', (string)$_SESSION['user']);
-        $items = $input['items'] ?? [];
-        $nonce = $input['nonce'] ?? '';
-        if (!is_array($items) || !$items || count($items)>30 || !is_string($nonce) || !preg_match('/^[a-f0-9-]{36}$/',$nonce)) respond(['error'=>'Invalid order'],422);
-        $id = substr(hash('sha256',$_SESSION['user'].':'.$nonce),0,20);
-        $order = ['id'=>$id,'created'=>gmdate('c'),'total'=>0,'items'=>[]];
-        foreach ($items as $item) {
-            if (!is_array($item) || !is_string($item['id'] ?? null)
-                || !is_int($item['offer'] ?? null) || $item['offer'] < 1) {
-                respond(['error' => 'Invalid order item'], 422);
-            }
-            $product = $byId[$item['id']] ?? null;
-            $offer = $product ? (offers($product)[$item['offer']-1] ?? null) : null;
-            if ($offer && isset($item['sellerId']) && ($item['sellerId'] !== $offer['sellerId'] || ($item['price'] ?? null) !== $offer['price'] || ($item['region'] ?? null) !== $offer['region'] || ($item['platform'] ?? null) !== $offer['platform'])) respond(['error'=>'This offer changed. Remove it and select the current offer.'],409);
-            if (!$offer) respond(['error'=>'An offer is unavailable'],422);
-            $order['items'][] = ['title'=>$product['title'],'seller'=>$offer['seller'],'productId'=>$product['id'],'sellerId'=>$offer['sellerId'],'offerId'=>$offer['id'],'platform'=>$offer['platform'],'region'=>$offer['region'],'price'=>$offer['price'],'key'=>'DEMO-'.strtoupper(bin2hex(random_bytes(6)))];
-            $order['total'] += $offer['price'];
-        }
-        $db->prepare('INSERT OR IGNORE INTO orders VALUES (?,?,?,?)')->execute([$id,$_SESSION['user'],json_encode($order),$order['created']]);
-        $stmt = $db->prepare('SELECT payload FROM orders WHERE id=? AND user_id=?');
-        $stmt->execute([$id,$_SESSION['user']]);
-        respond(json_decode($stmt->fetchColumn(),true),201);
+        respond(['error'=>'Use Stripe sandbox checkout'],410);
+
     }
 }
 respond(['error'=>'Endpoint not found'],404);

@@ -27,3 +27,5 @@ $seed = $db->prepare('INSERT OR IGNORE INTO products (position,id,payload) VALUE
 $catalog = catalogSeed();
 foreach ($catalog as $product) $seed->execute([$product['id'],json_encode($product)]);
 echo "Marketplace database initialized.\n";
+
+$db->exec("CREATE TABLE IF NOT EXISTS checkout_attempts (id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,total INTEGER NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL,consent TEXT,session_id TEXT UNIQUE,url TEXT)");

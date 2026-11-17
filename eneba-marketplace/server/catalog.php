@@ -21,7 +21,7 @@ function homepage(array $products, string $locale): array {
         foreach (['eyebrow','supporting','cta'] as $key) $slide[$key] = $slide[$key][$locale];
         return $slide;
     }, $data['slides']);
-    return ['slides'=>$slides,'shelves'=>$shelves];
+    return ['slides'=>$slides,'shelves'=>$shelves,'categories'=>json_decode(file_get_contents(__DIR__.'/categories.json'),true,512,JSON_THROW_ON_ERROR)];
 }
 function collectionProducts(array $products, string $id): array {
     if ($id === 'featured-deals') {
