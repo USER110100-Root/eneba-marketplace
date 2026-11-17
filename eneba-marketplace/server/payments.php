@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 function stripeRequest(array $parameters, string $key): array {
-    $secret = getenv('STRIPE_SECRET_KEY') ?: '';
-    if (!str_starts_with($secret, 'sk_test_')) throw new RuntimeException('Stripe sandbox is unavailable.');
+    $secret = trim(getenv('STRIPE_SECRET_KEY') ?: '');
+    if (!preg_match('/^sk_test_[A-Za-z0-9]{16,}$/', $secret)) throw new RuntimeException('Stripe sandbox key is missing or incomplete. Set the full STRIPE_SECRET_KEY in Render Environment Variables.');
     $context = stream_context_create(['http'=>[
         'method'=>'POST', 'timeout'=>15, 'ignore_errors'=>true,
         'header'=>"Authorization: Bearer ".$secret."\r\nContent-Type: application/x-www-form-urlencoded\r\nIdempotency-Key: ".$key,
@@ -11,6 +11,16 @@ function stripeRequest(array $parameters, string $key): array {
     ]]);
     $raw = file_get_contents('https://api.stripe.com/v1/checkout/sessions', false, $context);
     $data = $raw === false ? [] : json_decode($raw, true);
+    if (isset($data['error'])) {
+        $type = $data['error']['type'] ?? 'unknown';
+        $code = $data['error']['code'] ?? 'unknown';
+        $param = $data['error']['param'] ?? '';
+        error_log('Stripe checkout rejected: '.json_encode(['type'=>$type,'code'=>$code,'param'=>$param]));
+        if ($type === 'authentication_error') throw new RuntimeException('Stripe rejected the sandbox key. Replace STRIPE_SECRET_KEY with a valid full sk_test_ key.');
+        if ($type === 'idempotency_error') throw new RuntimeException('Checkout retry parameters changed. Remove and re-add the cart items, then retry.');
+        throw new RuntimeException('Stripe rejected checkout configuration. Check the Render logs for the error code and parameter.');
+    }
+    if ($raw === false) throw new RuntimeException('Could not reach Stripe. Please retry shortly.');
     if (empty($data['id']) || empty($data['url']) || ($data['livemode'] ?? true)) throw new RuntimeException('Stripe sandbox checkout is unavailable. Please retry.');
     return $data;
 }
