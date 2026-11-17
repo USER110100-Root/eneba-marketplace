@@ -105,7 +105,7 @@ function checkoutRoutes(PDO $db, string $path, string $method, array $input, arr
     if (in_array($attempt['status'], ['expired','failed'],true)) respond(['error'=>'Payment session ended. Remove and re-add the items to start a new checkout.'],409);
     if (!$attempt['url'] && strtotime($saved['created']) < time()-82800) respond(['error'=>'Checkout attempt expired. Remove and re-add the items.'],409);
     if ($attempt['url']) respond(['url'=>$attempt['url']]);
-    $params=['mode'=>'payment','payment_method_types'=>['card'],'success_url'=>$origin.'/#/payment?id='.$order['id'],
+    $params=['mode'=>'payment','payment_method_types[]'=>'card','success_url'=>$origin.'/#/payment?id='.$order['id'],
         'cancel_url'=>$origin.'/#/checkout?cancelled=1','metadata'=>['order_id'=>$order['id']],
         'custom_text'=>['submit'=>['message'=>'Sandbox demo: no real money charged. All keys are fictional.']]];
     foreach ($saved['items'] as $item) $params['line_items'][]=['quantity'=>1,'price_data'=>['currency'=>'eur','unit_amount'=>$item['price'],'product_data'=>['name'=>$item['title'],'description'=>$item['seller'].' · '.$item['platform'].' · '.$item['region']]]];
