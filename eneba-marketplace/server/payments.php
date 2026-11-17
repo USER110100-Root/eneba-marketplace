@@ -15,7 +15,8 @@ function stripeRequest(array $parameters, string $key): array {
         $type = $data['error']['type'] ?? 'unknown';
         $code = $data['error']['code'] ?? 'unknown';
         $param = $data['error']['param'] ?? '';
-        error_log('Stripe checkout rejected: '.json_encode(['type'=>$type,'code'=>$code,'param'=>$param]));
+        $message = preg_replace('/(?:sk|rk|pk)_(?:test|live)_[A-Za-z0-9]+/', '[redacted key]', (string)($data['error']['message'] ?? ''));
+        error_log('Stripe checkout rejected: '.json_encode(['type'=>$type,'code'=>$code,'param'=>$param,'message'=>substr($message,0,600)]));
         if ($type === 'authentication_error') throw new RuntimeException('Stripe rejected the sandbox key. Replace STRIPE_SECRET_KEY with a valid full sk_test_ key.');
         if ($type === 'idempotency_error') throw new RuntimeException('Checkout retry parameters changed. Remove and re-add the cart items, then retry.');
         throw new RuntimeException('Stripe rejected checkout configuration. Check the Render logs for the error code and parameter.');
@@ -105,7 +106,7 @@ function checkoutRoutes(PDO $db, string $path, string $method, array $input, arr
     if (in_array($attempt['status'], ['expired','failed'],true)) respond(['error'=>'Payment session ended. Remove and re-add the items to start a new checkout.'],409);
     if (!$attempt['url'] && strtotime($saved['created']) < time()-82800) respond(['error'=>'Checkout attempt expired. Remove and re-add the items.'],409);
     if ($attempt['url']) respond(['url'=>$attempt['url']]);
-    $params=['mode'=>'payment','payment_method_types[]'=>'card','success_url'=>$origin.'/#/payment?id='.$order['id'],
+    $params=['mode'=>'payment','success_url'=>$origin.'/#/payment?id='.$order['id'],
         'cancel_url'=>$origin.'/#/checkout?cancelled=1','metadata'=>['order_id'=>$order['id']],
         'custom_text'=>['submit'=>['message'=>'Sandbox demo: no real money charged. All keys are fictional.']]];
     foreach ($saved['items'] as $item) $params['line_items'][]=['quantity'=>1,'price_data'=>['currency'=>'eur','unit_amount'=>$item['price'],'product_data'=>['name'=>$item['title'],'description'=>$item['seller'].' · '.$item['platform'].' · '.$item['region']]]];
