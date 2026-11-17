@@ -1,9 +1,10 @@
 import {LocaleContext,formatMoney,translate,type Locale} from './i18n'
 import {useEffect,useLayoutEffect,useRef,useState} from 'react'
 import {createRoot} from 'react-dom/client'
-import {ArrowRight,ChevronLeft,ChevronRight,CircleHelp,CreditCard,Download,Gamepad2,Gift,Heart,LayoutGrid,Search,Settings,ShoppingCart,Store,Tag,User,Wallet,Zap} from 'lucide-react'
+import {createLucideIcon,ArrowRight,ChevronLeft,ChevronRight,CircleHelp,CreditCard,Gamepad2,Gift,Heart,LayoutGrid,Search,Settings,ShoppingCart,Store,Tag,User,Wallet} from 'lucide-react'
 import {ProductCard,type Product} from './ProductCard'
 import {MarketplaceFooter,ProductDetailsPage,type Offer,type Details} from './ProductDetailsPage'
+import {resolveProductId} from './productUtils'
 import './style.css'
 import './details.css'
 
@@ -11,12 +12,25 @@ type Item={id:string;offer:number;sellerId?:number;price?:number;platform?:strin
 type Order={id:string;total:number;items:{title:string;price:number;key:string;seller:string}[]}
 type Snapshot={products:Product[];offers:Record<string,Offer[]>;details:Record<string,Details>}
 type HomeContent={slides:{id:string;headline:string;artwork:string;eyebrow:string;supporting:string;cta:string;destination:string}[];shelves:{id:string;title:string;order:number;products:Product[];destination:string}[]}
-const shortcuts=[['Games',Gamepad2],['Gaming eCards',Wallet],['eGift Cards',Gift],['Steam',Gamepad2],['Steam Gift Cards',CreditCard],['PSN',Gamepad2],['Xbox',Gamepad2],['FIFA',Gamepad2],['Fortnite',Gamepad2],['Amazon',Gift]] as const
+const SteamDrive=createLucideIcon("SteamDrive",[["path",{"d":"M8 16l7-7m-7 7-4-2","key":"0"}],["path",{"d":"M3 14a3 3 0 1 0 6 0 3 3 0 0 0-6 0m10-6a4 4 0 1 0 8 0 4 4 0 0 0-8 0","key":"1"}]]);
+const PlayShapes=createLucideIcon("PlayShapes",[["path",{"d":"m4 10 4-6 4 6Zm1 5h5v5H5zm10 0 5 5m0-5-5 5","key":"0"}],["path",{"d":"M15 7a3 3 0 1 0 6 0 3 3 0 0 0-6 0","key":"1"}]]);
+const XboxSymbol=createLucideIcon("XboxSymbol",[["path",{"d":"M2 12a10 10 0 1 0 20 0 10 10 0 0 0-20 0","key":"0"}],["path",{"d":"M6 5c4 0 9 6 13 14M18 5c-4 0-9 6-13 14","key":"1"}]]);
+const Football=createLucideIcon("Football",[["path",{"d":"M2 12a10 10 0 1 0 20 0 10 10 0 0 0-20 0","key":"0"}],["path",{"d":"m12 7 5 4-2 5H9l-2-5Zm0 0V2m5 9 5-2m-7 7 3 5m-9-5-3 5m1-10L2 9","key":"1"}]]);
+const FortniteBolt=createLucideIcon("FortniteBolt",[["path",{"d":"m13 2-9 12h7l-1 8 10-12h-7z","key":"0"}]]);
+const SoftwareWindow=createLucideIcon("SoftwareWindow",[["path",{"d":"M3 4h18v16H3zM3 8h18m-12 4-2 2 2 2m6-4 2 2-2 2","key":"0"}]]);
+const TrophyNav=createLucideIcon("TrophyNav",[["path",{"d":"M8 3h8v7a4 4 0 0 1-8 0zm0 2H4v3a3 3 0 0 0 4 3m8-6h4v3a3 3 0 0 1-4 3m-4 3v6m-4 0h8","key":"1"}]]);
+const LibraryNav=createLucideIcon("LibraryNav",[["path",{"d":"M3 4h4v16H3zm7 0h4v16h-4zm7 1 3-1 3 15-3 1","key":"1"}]]);
+const CityNav=createLucideIcon("CityNav",[["path",{"d":"M3 21V10h5v11m0 0V4h7v17m0 0V8h6v13M2 21h20M11 8h1m-1 4h1m5 0h1M5 14h1","key":"1"}]]);
+const ParcelPlatform=createLucideIcon("ParcelPlatform",[["path",{"d":"m3 7 9-4 9 4v10l-9 4-9-4zm0 0 9 4 9-4m-9 4v10","key":"1"}]]);
+const EpicPlatform=createLucideIcon("EpicPlatform",[["path",{"d":"M5 3h14v14l-7 4-7-4zm4 5h6m-6 4h5","key":"1"}]]);
+const PcPlatform=createLucideIcon("PcPlatform",[["path",{"d":"M3 4h18v12H3zm9 12v4m-5 0h10","key":"1"}]]);
+const platformIcons:Record<string,typeof Gamepad2>={Steam:SteamDrive,PSN:PlayShapes,Xbox:XboxSymbol,"Xbox Live":XboxSymbol,Epic:EpicPlatform,Amazon:ParcelPlatform,Eneba:Gift,PC:PcPlatform}
+const shortcuts=[['Games',Gamepad2],['Gaming eCards',Wallet],['eGift Cards',Gift],['Steam',SteamDrive],['Steam Gift Cards',CreditCard],['PSN',PlayShapes],['Xbox',XboxSymbol],['FIFA',Football],['Fortnite',FortniteBolt],['Amazon',Gift]] as const
 const shop=(key='category',value='')=>'#/store'+(value?'?'+new URLSearchParams({[key]:value}):'')
 const shortcutLink=(name:string)=>['Games','Gaming eCards','eGift Cards'].includes(name)?shop('category',name):name==='Steam Gift Cards'?'#/search?q=steam+gift':['PSN','Xbox','Steam','Amazon'].includes(name)?shop('platform',name):'#/search?q='+encodeURIComponent(name==='FIFA'?'EA Sports FC':name)
 const nav=[
- [['Categories',LayoutGrid,'#categories'],['Cheap Games',Tag,"#/store?category=Games&sort=asc"],['Software',LayoutGrid,shop('category','Software')],['eGift Cards',Gift,shop('category','eGift Cards')],['Eneba Gift Cards',CreditCard,'#/product/eneba'],['FM27',Gamepad2,'#/product/fm'],['GTA VI',Gamepad2,'#/product/gta']],
- [['Wishlist',Heart,'#/wishlist'],['Library',Gamepad2,'#/orders'],['Store',Store,'#/store']],
+ [['Categories',LayoutGrid,'#categories'],['Cheap Games',Tag,"#/store?category=Games&sort=asc"],['Software',SoftwareWindow,shop('category','Software')],['eGift Cards',Gift,shop('category','eGift Cards')],['Eneba Gift Cards',CreditCard,'#/product/eneba'],['FM27',TrophyNav,'#/product/fm'],['GTA VI',CityNav,'#/product/gta']],
+ [['Wishlist',Heart,'#/wishlist'],['Library',LibraryNav,'#/orders'],['Store',Store,'#/store']],
  [['Help',CircleHelp,'#/help'],['Settings',Settings,'#/account']]
 ] as const
 const readLocal=<T,>(key:string,fallback:T):T=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}}
@@ -131,9 +145,9 @@ function App(){
  const catalogTitle=collectionTitle || (category==='Games'&&params.get('sort')==='asc' ? t('Cheap Games') : t(category||platform||'Store catalog'))
  const list=useRequest<Product[]>('products?'+qs,backend&&(page==='/store'||page==='/search'))
  const slug=page.match(/^\/products?\/([^/]+)$/)?.[1] || ''
- const detailId=({'cyberpunk-2077':'cyberpunk','elden-ring':'elden','red-dead-redemption-2':'redead'} as Record<string,string>)[slug] || slug
+ const detailId=resolveProductId(slug)
  const detail=useRequest<{product:Product;offers:Offer[];details?:Details|null}>('products/'+detailId,backend&&!!detailId)
- const history=useRequest<Order[]>('orders',backend&&!!email&&page==='/orders')
+ const history=useRequest<{orders:Order[];page:number;hasMore:boolean}>('orders?page='+encodeURIComponent(params.get('page')||'1'),backend&&!!email&&page==='/orders')
  const selected=detail.data?.product||products.find(p=>p.id===detailId)
  const details=detail.data?.details ?? snapshot?.details?.[detailId]
  const related=(details?.related?.length?details.related.map(id=>products.find(p=>p.id===id)).filter((p):p is Product=>!!p):products.filter(p=>p.id!==detailId&&p.category===selected?.category).slice(0,8))
@@ -146,7 +160,7 @@ function App(){
  const toggle=(id:string)=>setSaved(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id])
  const card=(p:Product)=>{
   const offer=offers(p.id).reduce<Offer|undefined>((lowest,current)=>!lowest||current.price<lowest.price?current:lowest,undefined)
-  return <ProductCard key={p.id} product={p} saved={saved.includes(p.id)} toggle={()=>toggle(p.id)} addToCart={offer?()=>add(p.id,offer):undefined}/>
+  return <ProductCard key={p.id} product={p} platformIcon={platformIcons[p.platform]} saved={saved.includes(p.id)} toggle={()=>toggle(p.id)} addToCart={offer?()=>add(p.id,offer):undefined}/>
  }
  const update=(key:string,value:string)=>{const next=new URLSearchParams(qs);if(value)next.set(key,value);else next.delete(key);navigate(page+'?'+next)}
  const visible=list.data||(params.has('collection')?[]:products).filter(p=>matches(p.title,query)&&['platform','category','region'].every(k=>!params.get(k)||params.get(k)===p[k as 'platform'|'category'|'region']||(k==='category'&&params.get(k)==='eGift Cards'&&p.category==='Gaming eCards'))&&(!params.get('max')||p.price<=Number(params.get('max'))*100)).sort((a,b)=>params.get('sort')==='asc'?a.price-b.price:params.get('sort')==='desc'?b.price-a.price:0)
@@ -159,7 +173,7 @@ function App(){
    setOrder(placed);setCart([]);orderNonce.current='';navigate('/confirmation')
   }catch(e){setToast((e as Error).message)}finally{setBusy(false)}
  }
- const renderOrders=(orders:Order[])=>orders.length?orders.map(o=><section className="panel" key={o.id}><h2>{t("Order")} {o.id}</h2>{o.items.map(i=><div className="line" key={i.key}><span>{i.title}<small>{i.seller}</small></span><code>{i.key}</code><strong>{money(i.price)}</strong></div>)}<strong>{t("Total")} {money(o.total)}</strong></section>):<p>{t("No orders yet.")}</p>
+ const renderOrders=(orders:Order[])=>orders.length?orders.map(o=><section className="panel" key={o.id}><h2>{t("Order")} {o.id}</h2>{o.items.map(i=><div className="line" key={i.key}><span>{i.title}<small>{i.seller}</small></span><code data-testid="order-key">{i.key}</code><strong>{money(i.price)}</strong></div>)}<strong>{t("Total")} {money(o.total)}</strong></section>):<p>{t("No orders yet.")}</p>
  const slides=home.data?.slides??[]
  const feature=slides[slide]
  return <LocaleContext.Provider value={locale}><div className="app" onClick={event=>{
@@ -169,14 +183,14 @@ function App(){
   saveScroll()
  }}>
   <aside className={'sidebar '+(menu?'opened':'')}>
-   <a className="brand" href="#/" aria-label="Eneba homepage"><img src="/assets/logo.png" alt="Eneba"/></a>
+   <a className="brand" href="#/" aria-label="Eneba homepage"><img src="/assets/logo-transparent.png" alt="Eneba"/></a>
    <nav>{nav.map((group,i)=><div className="nav-group" key={i}>{group.map(([label,Icon,url])=><a className={(label==='Categories'?page==='/':url==='#'+route)?'active':''} href={label==='Categories'&&page!=='/'?'#/':url} key={label}><Icon size={21}/>{t(label)}{label==='Categories'&&<ChevronRight className="push" size={15}/>}</a>)}</div>)}</nav>
    <a className="gift-promo" href="#/product/eneba"><img src="/assets/gift.png" alt=""/><span><strong>Eneba<br/>Gift Card</strong><small>{t("The perfect gift for gamers")}</small></span><ArrowRight size={17}/></a>
   </aside>
   <main className={page==='/'?'main home':'main inner'}>
    <header className="header">
     <button className="mobile-menu" aria-label={t("Toggle navigation")} aria-expanded={menu} onClick={()=>setMenu(v=>!v)}><LayoutGrid/></button>
-    <form role="search" onSubmit={e=>{e.preventDefault();navigate('/search?'+new URLSearchParams({q:term.trim()}))}}><button aria-label={t("Search")}><Search size={24}/></button><input aria-label={t("Search for games, top-ups and more")} placeholder={t("Search for games, top-ups and more")} value={term} onChange={e=>setTerm(e.target.value)}/></form>
+    <form role="search" onSubmit={e=>{e.preventDefault();navigate('/search?'+new URLSearchParams({q:term.trim()}))}}><button aria-label={t("Search")}><Search size={24}/></button><input data-testid="search-input" aria-label={t("Search for games, top-ups and more")} placeholder={t("Search for games, top-ups and more")} value={term} onChange={e=>setTerm(e.target.value)}/></form>
     <div className="locale"><select aria-label={locale==='lt'?'Kalba':'Language'} value={locale} onChange={e=>setLocale(e.target.value as Locale)}><option value="en">English</option><option value="lt">Lietuvių</option></select><span>EUR</span></div>
     <div className="actions"><a href="#/wishlist" aria-label={t("Wishlist")}><Heart/></a><a href="#/cart" aria-label={t('Cart items')+': '+cart.length}><ShoppingCart/>{cart.length>0&&<b>{cart.length}</b>}</a><a href={email?'#/account':'#/login'} aria-label={email?t('Account'):t('Log in or register')}><User/><span>{email?t('Account'):t('Log in | Register')}</span></a></div>
    </header>
@@ -195,21 +209,21 @@ function App(){
      <span className="payment-paypal">Pay<b>Pal</b></span>
      <span className="payment-apple"><i aria-hidden="true"></i> Apple Pay</span>
     </section>
-    <section className="newsletter panel"><div><h2>{t("Get the latest game deals")}</h2><p>{t("Sign up for updates and special offers.")}</p></div><form onSubmit={async e=>{e.preventDefault();const form=e.currentTarget;try{await api('newsletter',{email:new FormData(form).get('email')});form.reset();setToast('You’re subscribed')}catch(error){setToast((error as Error).message)}}}><input type="email" name="email" required aria-label={t("Email address")} placeholder={t("Email address")}/><button className="primary">{t("Subscribe")}</button></form></section>
+    <section className="newsletter panel"><div><h2>{t("Get the latest game deals")}</h2><p>{t("Sign up for updates and special offers.")}</p></div><form onSubmit={async e=>{e.preventDefault();const form=e.currentTarget;try{const result=await api<{message:string}>('newsletter',{email:new FormData(form).get('email')});form.reset();setToast(result.message)}catch(error){setToast((error as Error).message)}}}><input type="email" name="email" required aria-label={t("Email address")} placeholder={t("Email address")}/><button className="primary">{t("Subscribe")}</button></form></section>
     <MarketplaceFooter/>
    </div></>:<div className="content page">
     {(page==='/store'||page==='/search')&&<><div className="catalog-heading"><h1>{page==='/search'?(query?t('Search results')+' · “'+query+'”':t('Search results')):catalogTitle}</h1><details className="catalog-filters" key={page}><summary>{t("Filters")}</summary><div className="filters">{(['platform','region','category'] as const).map(key=><label key={key}>{t(key)}<select value={params.get(key)||''} onChange={e=>update(key,e.target.value)}><option value="">{t("All")}</option>{Array.from(new Set(products.map(p=>p[key]))).map(v=><option key={v} value={v}>{t(v)}</option>)}</select></label>)}<label>{t("Max price (€)")}<input key={qs} type="number" min="0" defaultValue={params.get('max')||''} onBlur={e=>update('max',e.target.value)}/></label><label>{t("Sort by")}<select value={params.get('sort')||''} onChange={e=>update('sort',e.target.value)}><option value="">{t("Featured")}</option><option value="asc">{t("Price low to high")}</option><option value="desc">{t("Price high to low")}</option></select></label></div></details></div><p className="catalog-count">{visible.length} {t('results')}</p><div className="catalog-grid">{visible.map(card)}</div>{visible.length===0&&<p>{t("Try a different search or clear your filters.")}</p>}</>}
     {detailId&&(selected?<ProductDetailsPage key={selected.id} product={selected} details={details} related={related} offers={detail.data?.offers||offers(selected.id)} saved={saved.includes(selected.id)} toggle={()=>toggle(selected.id)} add={offer=>add(selected.id,offer)} notice={setToast} card={card}/>:<p>{snapshot?t('Product unavailable.'):t('Loading product…')}</p>)}
     {page==='/wishlist'&&<><h1>{t("Wishlist")}</h1><div className="catalog-grid">{products.filter(p=>saved.includes(p.id)).map(card)}</div>{!saved.length&&<p>{t("Save products with the heart button to find them here.")}</p>}</>}
-    {(page==='/cart'||page==='/checkout')&&<><h1>{page==='/cart'?t('Shopping cart'):t('Checkout')}</h1>{cartLines.length?<section className="panel">{cartLines.map(({product,offer,index})=><div className="line" key={index}><a href={'#/product/'+product.id}>{product.title}<small>{offer.seller} · {offer.platform} · {t(offer.region)}</small></a><b>{money(offer.price)}</b>{page==='/cart'&&<button onClick={()=>{orderNonce.current='';setCart(c=>c.filter((_,i)=>i!==index))}}>{t("Remove")}</button>}</div>)}<div className="line"><strong>{t("Total")}</strong><strong>{money(total)}</strong></div>{page==='/cart'?<a className="primary" href="#/checkout">{t("Continue to checkout")}</a>:email?<button disabled={busy} className="primary" onClick={checkout}>{busy?t('Placing order…'):t('Place simulated order')}</button>:<a className="primary" href="#/login?next=checkout">{t("Log in to checkout")}</a>}</section>:<p>{t("Your cart is empty.")} <a href="#/store">{t("Browse the store")}</a></p>}{page==='/checkout'&&<p>{t("Simulated payment. No card details are required.")}</p>}</>}
-    {(page==='/login'||page==='/register')&&<section className="panel auth"><h1>{page==='/login'?t('Log in'):t('Register')}</h1>{!backend&&<p>{t("Account access is available when the PHP service is running.")}</p>}<form onSubmit={async e=>{e.preventDefault();setBusy(true);try{const data=Object.fromEntries(new FormData(e.currentTarget));const account=await api<{email:string}>(page.slice(1),data);setEmail(account.email);navigate(params.get('next')==='checkout'?'/checkout':'/account')}catch(error){setToast((error as Error).message)}finally{setBusy(false)}}}><label>{t("Email")}<input name="email" type="email" autoComplete="email" required/></label><label>{t("Password")}<input name="password" type="password" minLength={8} maxLength={72} required autoComplete={page==='/login'?'current-password':'new-password'}/></label><button className="primary" disabled={busy||!backend}>{page==='/login'?t('Log in'):t('Create account')}</button></form><a href={(page==='/login'?'#/register':'#/login')+(qs?'?'+qs:'')}>{page==='/login'?t('Create an account'):t('Already registered? Log in')}</a></section>}
-    {page==='/account'&&<><h1>{t("Account")}</h1>{email?<section className="panel"><p>{email}</p><a className="secondary" href="#/orders">{t("Order history")}</a> <button className="primary" onClick={async()=>{try{await api('logout',{});setEmail(null);setOrder(undefined);navigate('/')}catch(error){setToast((error as Error).message)}}}>{t("Log out")}</button></section>:<a className="primary" href="#/login">{t("Log in or register")}</a>}</>}
-    {page==='/orders'&&<><h1>{t("Order history")}</h1>{email?history.data?renderOrders(history.data):<p>{t(history.error||'Loading orders…')}</p>:<a className="primary" href="#/login">{t("Log in to see orders")}</a>}</>}
-    {page==='/confirmation'&&<><h1>{t("Order confirmed")}</h1>{email&&order?renderOrders([order]):<p>{t("Find previous purchases in your")} <a href="#/orders">order history</a>.</p>}</>}
+    {(page==='/cart'||page==='/checkout')&&<><h1>{page==='/cart'?t('Shopping cart'):t('Checkout')}</h1>{cartLines.length?<section className="panel">{cartLines.map(({product,offer,index})=><div data-testid="cart-line" className="line" key={index}><a href={'#/product/'+product.id}>{product.title}<small>{offer.seller} · {offer.platform} · {t(offer.region)}</small></a><b>{money(offer.price)}</b>{page==='/cart'&&<button onClick={()=>{orderNonce.current='';setCart(c=>c.filter((_,i)=>i!==index))}}>{t("Remove")}</button>}</div>)}<div className="line"><strong>{t("Total")}</strong><strong>{money(total)}</strong></div>{page==='/cart'?<a data-testid="checkout-link" className="primary" href="#/checkout">{t("Continue to checkout")}</a>:email?<button data-testid="place-order" disabled={busy} className="primary" onClick={checkout}>{busy?t('Placing order…'):t('Place simulated order')}</button>:<a data-testid="checkout-login" className="primary" href="#/login?next=checkout">{t("Log in to checkout")}</a>}</section>:<p data-testid="cart-empty">{t("Your cart is empty.")} <a href="#/store">{t("Browse the store")}</a></p>}{page==='/checkout'&&<p>{t("Simulated payment. No card details are required.")}</p>}</>}
+    {(page==='/login'||page==='/register')&&<section className="panel auth"><h1>{page==='/login'?t('Log in'):t('Register')}</h1>{!backend&&<p>{t("Account access is available when the PHP service is running.")}</p>}<form onSubmit={async e=>{e.preventDefault();setBusy(true);try{const data=Object.fromEntries(new FormData(e.currentTarget));if(page==='/register'){const result=await api<{message:string}>('register',data);setToast(result.message);navigate('/login'+(qs?'?'+qs:''));return}const account=await api<{email:string}>('login',data);setEmail(account.email);navigate(params.get('next')==='checkout'?'/checkout':'/account')}catch(error){setToast((error as Error).message)}finally{setBusy(false)}}}><label>{t("Email")}<input data-testid="auth-email" name="email" type="email" autoComplete="email" required/></label><label>{t("Password")}<input data-testid="auth-password" name="password" type="password" minLength={8} maxLength={72} required autoComplete={page==='/login'?'current-password':'new-password'}/></label><button data-testid="auth-submit" className="primary" disabled={busy||!backend}>{page==='/login'?t('Log in'):t('Create account')}</button></form><a href={(page==='/login'?'#/register':'#/login')+(qs?'?'+qs:'')}>{page==='/login'?t('Create an account'):t('Already registered? Log in')}</a></section>}
+    {page==='/account'&&<><h1>{t("Account")}</h1>{email?<section className="panel"><p>{email}</p><a className="secondary" href="#/orders">{t("Order history")}</a> <button data-testid="logout" className="primary" onClick={async()=>{try{await api('logout',{});setEmail(null);setOrder(undefined);navigate('/')}catch(error){setToast((error as Error).message)}}}>{t("Log out")}</button></section>:<a className="primary" href="#/login">{t("Log in or register")}</a>}</>}
+    {page==='/orders'&&<><h1>{t("Order history")}</h1>{email?history.data?<>{renderOrders(history.data.orders)}{history.data.page>1&&<a className="secondary" href={'#/orders?page='+(history.data.page-1)}>{locale==='lt'?'Ankstesnis puslapis':'Previous page'}</a>}{history.data.hasMore&&<a className="secondary" href={'#/orders?page='+(history.data.page+1)}>{locale==='lt'?'Kitas puslapis':'Next page'}</a>}</>:<p>{t(history.error||'Loading orders…')}</p>:<a data-testid="orders-login" className="primary" href="#/login">{t("Log in to see orders")}</a>}</>}
+    {page==='/confirmation'&&<><h1 data-testid="order-confirmed">{t("Order confirmed")}</h1>{email&&order?renderOrders([order]):<p>{t("Find previous purchases in your")} <a href="#/orders">order history</a>.</p>}</>}
     {page==='/about'&&<><h1>{t("Marketplace demo")}</h1><section className="panel"><p>{locale==='lt'?'Tai neoficialus praktikos projektas, kuriame galite naršyti prekes, palyginti pardavėjų pasiūlymus ir išbandyti pirkimą. Mokėjimai ir aktyvinimo raktai yra demonstraciniai.':'This unofficial internship project lets you browse products, compare seller offers and try checkout. Payments and activation keys are simulated.'}</p><a className="primary" href="#/store">{t("Browse products")}</a></section></>}
     {page==='/help'&&<><h1>{t("Help")}</h1><section className="panel"><h2>{t("How do digital keys work?")}</h2><p>{t("Compare the platform and activation region on the product page. After simulated checkout, find your demo key in Order history.")}</p></section></>}
    </div>}
-  </main>{toast&&<div className="toast" role="status">{t(toast)}{toast==='Added to cart'&&<> · <a href="#/cart">{t("View cart")}</a></>}</div>}
+  </main>{toast&&<div data-testid="notice" className="toast" role="status">{t(toast)}{toast==='Added to cart'&&<> · <a href="#/cart">{t("View cart")}</a></>}</div>}
  </div></LocaleContext.Provider>
 }
 createRoot(document.getElementById('root')!).render(<App/>)

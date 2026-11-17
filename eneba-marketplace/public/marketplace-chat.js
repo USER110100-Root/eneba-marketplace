@@ -64,7 +64,7 @@ form.addEventListener('submit', async event => {
     }
     if (typeof data.reply !== 'string') throw new Error();
     appendMessage(data.reply, 'assistant');
-    history.push({role: 'user', content: message}, {role: 'assistant', content: data.reply});
+    history.push({role: 'user', content: message}, {role: 'assistant', content: [...data.reply].slice(0, 500).join('')});
     if (history.length > 6) history.splice(0, history.length - 6);
   } catch {
     appendMessage(copy[language][5], 'assistant');

@@ -2,9 +2,13 @@
 declare(strict_types=1);
 
 function consumeAuthAttempts(PDO $db, string $route, string $ip, string $email, int $now): int {
-    $rules = $route === 'login'
-        ? [['login-ip', $ip, 30, 900], ['login-account', $email, 5, 900]]
-        : ($route === 'chat' ? [['chat-ip', $ip, 10, 60]] : [['register-ip', $ip, 5, 3600]]);
+    $rules = match ($route) {
+        'login' => [['login-ip', $ip, 30, 900], ['login-account', $email, 5, 900]],
+        'chat' => [['chat-ip', $ip, 10, 60]],
+        'newsletter' => [['newsletter-ip', $ip, 10, 3600], ['newsletter-email', $email, 3, 3600]],
+        'orders' => [['orders-ip', $ip, 30, 60], ['orders-account', $email, 10, 60]],
+        default => [['register-ip', $ip, 5, 3600]],
+    };
     $db->exec('CREATE TABLE IF NOT EXISTS auth_limits (bucket TEXT PRIMARY KEY, attempts INTEGER NOT NULL, expires INTEGER NOT NULL)');
     $db->exec('CREATE INDEX IF NOT EXISTS auth_limits_expiry ON auth_limits(expires)');
     $db->exec('BEGIN IMMEDIATE');

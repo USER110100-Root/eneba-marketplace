@@ -2,11 +2,29 @@
 declare(strict_types=1);
 
 function marketplaceChat(array $input, array $products, PDO $db): never {
-    $question = $input['message'] ?? null;
-    if (!is_string($question) || trim($question) === '' || strlen($question) > 1200) {
-        respond(['error' => 'Enter a message of up to 1200 bytes.'], 400);
+    $flag = getenv('CHAT_ENABLED');
+    if (!filter_var($flag === false ? getenv('APP_ENV') === 'development' : $flag, FILTER_VALIDATE_BOOLEAN)) {
+        respond(['error' => 'AI chat is currently unavailable.'], 503);
     }
-    $lithuanian = ($input['locale'] ?? '') === 'lt';
+    $validText = static fn($value): bool => is_string($value)
+        && preg_match('/\A.{0,500}\z/us', $value) === 1;
+    $question = $input['message'] ?? null;
+    $locale = array_key_exists('locale', $input) ? $input['locale'] : 'en';
+    $history = array_key_exists('history', $input) ? $input['history'] : [];
+    if (!$validText($question) || trim($question) === ''
+        || !in_array($locale, ['en', 'lt'], true)
+        || !is_array($history) || !array_is_list($history) || count($history) > 6) {
+        respond(['error' => 'Invalid chat message, history or locale.'], 400);
+    }
+    $messages = [];
+    foreach ($history as $turn) {
+        if (!is_array($turn) || !in_array($turn['role'] ?? null, ['user', 'assistant'], true)
+            || !$validText($turn['content'] ?? null)) {
+            respond(['error' => 'Invalid chat history entry.'], 400);
+        }
+        $messages[] = ['role' => $turn['role'], 'content' => $turn['content']];
+    }
+    $lithuanian = $locale === 'lt';
     $words = preg_split('/[^a-z0-9]+/', strtolower($question), -1, PREG_SPLIT_NO_EMPTY);
     $terms = array_values(array_diff($words, [
         'what', 'is', 'the', 'price', 'prices', 'how', 'much', 'does', 'cost', 'a', 'an', 'for', 'of', 'my', 'please',
@@ -33,14 +51,6 @@ function marketplaceChat(array $input, array $products, PDO $db): never {
         header('Retry-After: '.$retry);
         respond(['error' => 'Too many messages. Try again shortly.'], 429);
     }
-    $history = $input['history'] ?? [];
-    $messages = [];
-    foreach (is_array($history) ? array_slice($history, -6) : [] as $message) {
-        if (is_array($message) && in_array($message['role'] ?? null, ['user', 'assistant'], true)
-            && is_string($message['content'] ?? null) && strlen($message['content']) <= 2400) {
-            $messages[] = ['role' => $message['role'], 'content' => $message['content']];
-        }
-    }
     $messages[] = ['role' => 'user', 'content' => trim($question)];
     $catalog = array_map(static fn(array $product) => [
         'title' => $product['title'],
@@ -59,15 +69,22 @@ function marketplaceChat(array $input, array $products, PDO $db): never {
         ]], $messages),
         'options' => ['num_ctx' => 8192, 'num_predict' => 240, 'temperature' => 0.1],
     ], JSON_THROW_ON_ERROR);
-    session_write_close();
+    $lock = @fopen(dirname(marketDatabasePath()).'/chat-generation.lock', 'c');
+    if (!$lock) respond(['error' => 'AI chat is currently unavailable.'], 503);
+    if (!flock($lock, LOCK_EX | LOCK_NB)) {
+        header('Retry-After: 2');
+        respond(['error' => 'AI chat is busy. Try again shortly.'], 429);
+    }
     $request = curl_init('http://127.0.0.1:11434/api/chat');
     curl_setopt_array($request, [
         CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 2, CURLOPT_TIMEOUT => 75,
+        CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 2, CURLOPT_TIMEOUT => 15,
         CURLOPT_NOPROXY => '*',
     ]);
     $raw = curl_exec($request);
+    $timedOut = curl_errno($request) === CURLE_OPERATION_TIMEDOUT;
+    if ($timedOut) respond(['error' => 'AI chat timed out. Try again shortly.'], 504);
     $status = curl_getinfo($request, CURLINFO_RESPONSE_CODE);
     $result = is_string($raw) ? json_decode($raw, true) : null;
     $reply = $result['message']['content'] ?? null;

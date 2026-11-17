@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.sqlite*
+
+.sessions/
+.env
+.env.*
+*.sqlite
+/var/
+
+/test-results/
+/playwright-report/

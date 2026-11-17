@@ -1,3 +1,4 @@
+import {applyFallbackArtwork} from './productUtils'
 import {useLocale,useTranslation,formatMoney} from './i18n'
 import {useRef,useState,type ReactNode} from 'react'
 import {ArrowRight,ChevronLeft,ChevronRight,Heart,Share2,Star} from 'lucide-react'
@@ -10,7 +11,7 @@ export type Details={rating:number;count:number;scores:Record<string,number>;gen
 export function MarketplaceFooter(){
  const t=useTranslation()
  const columns=[['About Eneba','Marketplace demo','#/about'],['Buy','Browse products','#/store'],['Help','Activation and orders','#/help'],['Community','Wishlist','#/wishlist'],['Business','Marketplace information','https://www.eneba.com/sell-with-eneba'],['Follow us','Eneba on Instagram','https://www.instagram.com/eneba/'],['Download the App','Find the Eneba app','https://play.google.com/store/apps/details?id=com.eneba.app']]
- return <footer className="market-footer">{columns.map(([title,label,href])=><div key={title}><strong>{t(title)}</strong><a href={href}>{t(label)}</a></div>)}<small>{t("Internship demo · Simulated purchases")}</small></footer>
+ return <footer className="market-footer">{columns.map(([title,label,href])=><div key={title}><strong>{t(title)}</strong><a href={href}>{t(label)}</a>{title==='Buy'&&<a href="#/cart">{t("Shopping cart")}</a>}{title==='Help'&&<a href="#/orders">{t("Order history")}</a>}{title==='Community'&&<a href="#/login">{t("Log in")}</a>}</div>)}<small>{t("Internship demo · Simulated purchases")}</small></footer>
 }
 
 export function ProductDetailsPage({product,details,offers,related,saved,toggle,add,notice,card}:{product:Product;details?:Details|null;offers:Offer[];related:Product[];saved:boolean;toggle:()=>void;add:(offer:Offer)=>void;notice:(text:string)=>void;card:(product:Product)=>ReactNode}){
@@ -39,7 +40,7 @@ export function ProductDetailsPage({product,details,offers,related,saved,toggle,
  return <div className="product-page">
   <nav className="crumbs" aria-label={t("Breadcrumb")}><a href="#/">{t("Home")}</a><ChevronRight size={14}/><a href="#/store">{t("Store")}</a><ChevronRight size={14}/><span>{product.title}</span></nav>
   <section className="panel detail-overview">
-   <div className="detail-cover">{product.art?<img src={product.art} onError={({currentTarget})=>{if(product.fallbackArt && currentTarget.getAttribute('src')!==product.fallbackArt) currentTarget.src=product.fallbackArt}} alt={product.title+' cover'}/>:<strong>{product.title}</strong>}</div>
+   <div className="detail-cover">{product.art?<img src={product.art} onError={({currentTarget})=>applyFallbackArtwork(currentTarget,product.fallbackArt)} alt={product.title+' cover'}/>:<strong>{product.title}</strong>}</div>
    <div><div className="chips"><span>{product.platform}</span><span>{t(product.region)}</span></div><h1>{product.title}</h1>
     {details&&<p className="rating"><Star size={18}/> <strong>{details.rating.toFixed(2)} / 5</strong> · {details.count} {t('ratings')}</p>}
     {details&&<div className="chips">{details.genres.map(g=><span key={g}>{t(g)}</span>)}</div>}
@@ -57,7 +58,7 @@ export function ProductDetailsPage({product,details,offers,related,saved,toggle,
     <small>{locale==='lt'?'Patikra pagal demonstracinių pasiūlymų regionus.':'Based on the activation regions in the demo catalog.'}</small>
    </details>
    <div className="filters"><label>{t("Activation region")}<select value={region} onChange={e=>setRegion(e.target.value)}><option value="">{t("All regions")}</option>{[...new Set(offers.map(o=>o.region))].map(x=><option key={x} value={x}>{t(x)}</option>)}</select></label><label>{t("Platform")}<select value={platform} onChange={e=>setPlatform(e.target.value)}><option value="">{t("All platforms")}</option>{[...new Set(offers.map(o=>o.platform))].map(x=><option key={x} value={x}>{t(x)}</option>)}</select></label><label>{t("Sort by")}<select value={sort} onChange={e=>setSort(e.target.value)}><option value="asc">{t("Lowest price")}</option><option value="desc">{t("Highest price")}</option></select></label></div>
-   {filtered.map(o=><div className={'offer-row '+(selected===o.id?'selected':'')} key={o.id}><label><input type="radio" name="offer" checked={selected===o.id} onChange={()=>setSelected(o.id)}/><strong>{o.seller}</strong><small>★ {o.rating} · {o.reviews.toLocaleString()} {t('reviews')}</small></label><div>{o.platform} · {t(o.region)}<small>{t(o.edition)} · {t(o.availability)}</small></div><div className="offer-price"><strong>{money(o.price)}</strong>{o.old>0&&<small><del>{money(o.old)}</del> · −{o.discount}%</small>}{o.cashback&&<small className="rating">{o.cashback}</small>}</div><button className="primary" onClick={()=>{setSelected(o.id);add(o)}}>{t("Add to cart")}</button></div>)}
+   {filtered.map(o=><div className={'offer-row '+(selected===o.id?'selected':'')} key={o.id}><label><input type="radio" name="offer" checked={selected===o.id} onChange={()=>setSelected(o.id)}/><strong>{o.seller}</strong><small>★ {o.rating} · {o.reviews.toLocaleString()} {t('reviews')}</small></label><div>{o.platform} · {t(o.region)}<small>{t(o.edition)} · {t(o.availability)}</small></div><div className="offer-price"><strong>{money(o.price)}</strong>{o.old>0&&<small><del>{money(o.old)}</del> · −{o.discount}%</small>}{o.cashback&&<small className="rating">{o.cashback}</small>}</div><button data-testid={'offer-add-'+o.id} className="primary" onClick={()=>{setSelected(o.id);add(o)}}>{t("Add to cart")}</button></div>)}
    {!filtered.length&&<p>{t("No offers match these filters.")}</p>}
   </section>
   <section className="shelf related"><div className="section-title"><h2>{t("Gamers also viewed")}</h2><div className="detail-actions"><button aria-label={t("Previous products")} onClick={()=>rail.current?.scrollBy({left:-390,behavior:'smooth'})}><ChevronLeft/></button><button aria-label={t("Next products")} onClick={()=>rail.current?.scrollBy({left:390,behavior:'smooth'})}><ChevronRight/></button></div></div><div className="rail" ref={rail}>{related.map(card)}</div></section>

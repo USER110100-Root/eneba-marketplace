@@ -206,3 +206,15 @@ html::-webkit-scrollbar{display:none}
 }
 
 .activation-assistant{margin:0 0 16px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:#201433}.activation-assistant summary{cursor:pointer;font-weight:700}.activation-assistant label{display:block;margin-top:12px}.activation-assistant select{max-width:100%;padding:6px}.activation-assistant p{margin:8px 0}.activation-assistant p:empty{display:none}.activation-assistant small{display:block;margin-top:8px;color:var(--muted)}
+
+/* Keep cover frames and pricing aligned across catalog cards. */
+.product-info{grid-template-rows:32px 19px minmax(0,1fr)}
+.product-title{height:30px;align-self:start}
+.product-info .price{align-self:end}
+.cover img[src]{object-fit:cover}
+.cover:is([data-product="amazon"],[data-product^="batman-"]) img[src^="https://"]{transform:scale(1.1)}
+.product-meta svg{flex:none}
+@media(min-width:761px){
+}
+.payment-strip{background:#fff;color:#111;border:1px solid #694982;border-radius:10px}
+.market-footer div{align-content:start}

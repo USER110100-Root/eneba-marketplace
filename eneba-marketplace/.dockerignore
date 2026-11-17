@@ -1,0 +1,8 @@
+.git
+.env
+.env.*
+.sessions
+node_modules
+dist
+var
+**/*.sqlite*
